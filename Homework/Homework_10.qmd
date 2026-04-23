@@ -1,0 +1,197 @@
+---
+title: "**MATH 3190 Homework 10**"
+subtitle: |
+  Due April 16, 2026\
+  Focus: Notes 11\
+  Total Points: 45 + 10 (Self-Critique Comment and Uploading to GitHub) = 55
+  Name: Melanie Jensen
+format: 
+  html:
+    embed-resources: true # Keep this so the html file is easily shareable.
+urlcolor: blue
+execute: # Will set these as the default for all code chunks
+  eval: true
+  echo: true
+  message: false
+editor_options: 
+  chunk_output_type: console
+---
+
+Note that your homework should be completed in Quarto. You can just add your answers and code to this document in the appropriate part. The file should be rendered as an html document or pdf document (html is quicker to render and you will need an installation of LaTeX to render as a pdf). You will "turn in" this homework by uploading the files, the .qmd and output file, to your GitHub `Math_3190_Assignment` repository in the `Homework/Homework_10` directory. Make sure all supporting files (if there are any) are in this directory as well. You should use `git` and `Unix` commands in a terminal for this (i.e. don't manually upload files to GitHub). In addition, you will submit just your html or pdf file on Canvas to unlock the solutions.
+
+Don't forget to also put a [self-critique comment]{.underline} on Canvas indicating what you did correctly and incorrectly and include any questions you may have about the assignment after submitting the assignment and thoroughly looking through the solutions.
+
+```{r}
+#| label: initializationsw
+#| include: false
+
+library(itsmr)
+library(tsibble)
+library(ggplot2)
+library(ggtime)
+library(tseries)
+library(forecast)
+library(tidyverse)
+
+```
+
+# Problem 1 (45 points)
+
+In the `itsmr` package is the dataset called `wine` that contains 142 accounts of Australian red wine sales per month from January 1980 to October 1991.
+
+### Part a (5 points)
+Load in this data and convert it to a `tsibble`. You can do this by first making it a `ts` object by typing `ts(wine, deltat = 1/12, start = 1980)` and then piping that into the `as_tsibble()` function in the `tsibble` package.
+
+Then use `ggplot()` to plot the time series. Show both the points and lines connecting them. On the $x$ axis, put each year using the `scale_x_yearmonth()` function and give the plot a title.
+
+```{r}
+#| label: p1a
+
+wine_tsibble <- ts(wine, deltat = 1/12, start = 1980) |> 
+  as_tsibble()
+
+# Plotting the single series
+ggplot(wine_tsibble, aes(x = index, y = value)) +
+  geom_line(color = "darkred") + 
+  geom_point() +
+  scale_x_yearmonth(date_breaks = "1 year", date_labels = "%Y") + 
+  labs(title = "Australian Red Wine Sales", 
+       x = "Year", 
+       y = "Sales") +
+  theme_minimal()
+
+```
+
+### Part b (2 points)
+Remove the last 34 rows from the wine data. We will use them to compare how our forecasts look later. 
+
+```{r}
+#| label: p1b
+
+n <- nrow(wine_tsibble)
+
+wine_train <- wine_tsibble[1:(n - 34), ]
+wine_test <- wine_tsibble[(n - 33):n, ]
+
+```
+
+### Part c (5 points)
+Use the `gg_season()` plot in the `ggtime` library to plot the seasonality. Does it seem like there is trend and/or seasonality in this time series? If so, explain the patterns. 
+
+```{r}
+#| label: p1c
+
+gg_season(wine_train, y = value, labels = "both") +
+  labs(title = "Seasonal Plot", x = "Date", y = "Sales") +
+  theme_minimal()
+
+```
+
+There appears to be seasonality as each year sales spike over the summer months. There is also evidence of trend where not only is each year over the last, but we can see that the end of a year is always more than the start of that respective year. 
+
+### Part d (4 points)
+Use the `adf.test()` function in the `tseries` library to perform a Dickey-Fuller test to determine if we have evidence this time series is stationary. Only the column with the sales should be entered. Since we have data by month, use the `k = 12` option. Comment on the results of the test. 
+
+```{r}
+#| label: p1d
+
+adf.test(wine_train$value, k = 12)
+
+```
+
+With 95% confidence, we do not have enough evidence to reject the null hypothesis, meaning we do not have enough evidence to say that the time series is stationary. 
+
+### Part e (6 points)
+Difference the data once. Take $Y_t = Y_{t+1} - Y_{t}$ for $t=1,\dots,n-1$. In the notes, I defined the differences as $Y_t = Y_{t} - Y_{t+1}$, but it actually does not matter. **Plot** this differenced time series (you can just put the index on the x-axis) and use the `adf.test()` function again on the differenced data. Again, use `k = 12` option. **Comment** on the results of the test. 
+
+```{r}
+#| label: p1e
+
+wine_diff <- diff(wine_train$value)
+
+plot(wine_diff, type = "l", main = "Differenced Wine Sales", ylab = "Diff Value")
+
+adf.test(wine_diff, k = 12)
+
+```
+
+When using the differenced value, with 95% confidence, we have enough evidence to reject the null hypothesis, meaning we have enough evidence to say that the time series is stationary.
+
+### Part f (4 points)
+Now use the `auto.arima()` function in the `forecast` library to fit an ARIMA model to this time series (put the entire original tsibble into this function, not the differences time series).
+
+Feel free to check out [this resource](https://otexts.com/fpp2/arima-r.html) that discusses more about time series, including what the drift term is. 
+
+```{r}
+#| label: p1f
+
+wine_mod <- auto.arima(wine_train)
+wine_mod
+
+```
+
+### Part g (5 points)
+Use the `forecast()` function from the `forecast` library to predict the future for 34 months. You should specify you are using the `forecast` library by typing `forecast::forecast()` since the `itsmr` library also has a `forecast()` function. The input of this function is your model you fit in part (f). Use the model fit to the undifferenced data.
+
+Then use the `autoplot()` function to plot the forecast. 
+
+```{r}
+#| label: p1g
+
+wine_forecast <- forecast::forecast(wine_mod, level = 95, h = 34)
+
+autoplot(wine_forecast) + 
+  scale_x_continuous(breaks = 1980:1992)
+
+```
+
+### Part h (8 points)
+Plot the actual values for 1989, 1990, and 1991 along with the predicted values from the forecast and a shaded 95% interval bands. The `geom_ribbon()` function may be useful here. Is there any point where the true value is outside the interval? If so, report the year(s) and month(s) where that is the case.
+
+```{r}
+#| label: p1h
+
+forecast_df <- data.frame(
+  time     = as.numeric(time(wine_forecast$mean)),
+  forecast = as.numeric(wine_forecast$mean),
+  lo95     = as.numeric(wine_forecast$lower[, "95%"]),
+  hi95     = as.numeric(wine_forecast$upper[, "95%"])
+)
+
+test_df <- data.frame(
+  time  = as.numeric(time(as.ts(wine_test))),
+  value = as.numeric(as.ts(wine_test))
+)
+
+combined_df <- inner_join(forecast_df, test_df, by = "time")
+
+ggplot(combined_df, aes(x = time)) +
+  geom_ribbon(aes(ymin = lo95, ymax = hi95, fill = "95% CI"), alpha = 0.2) +
+  geom_line(aes(y = forecast, colour = "Forecast")) +
+  geom_line(aes(y = value, colour = "Actual")) +
+  scale_x_continuous(breaks = 1989:1992, limits = c(1989, 1992)) +
+  scale_colour_manual(values = c("Forecast" = "blue", "Actual" = "red")) +
+  scale_fill_manual(values = c("95% CI" = "blue", "Error" = "red")) +
+  labs(x = "Year", y = "Wine Sales", colour = "Lines", fill = "Ribbons") +
+  theme_bw()
+
+```
+
+There is only one point in which the actual value is outside of the 95% confidence interval for the forecast and that is at approximately march of 1991. 
+
+### Part i (6 points)
+Use the `checkresiduals()` function in the `forecast` library to create a residual plot, an autocorrelation plot, and a histogram for the residuals. The input to this function should be your model fit with the `auto.arima()` function. Comment on whether the assumptions seem to be satisfied here. If you'd like, you can make a QQ-plot as well, but the histogram contains the same information. 
+
+Note: this function will also give you information from the Ljung-Box test, which tests if the residuals exhibit autocorrelation. A large p-value means we have no evidence of autocorrelation.
+
+
+```{r}
+#| label: p1i
+
+checkresiduals(wine_mod)
+
+```
+
+The residual plot is showing no obvious patterns. While there is a little fanning occuring, where the variance is unequal, it does not look to be too bad. 
+The autocorrelation plot is not showing any significant autocorrelation, as evidenced by the ljung-box test. 
+The histogram is showing signs of being skewed to the left and having short tails. 

@@ -1,0 +1,508 @@
+---
+title: "**MATH 3190 Homework 1**"
+subtitle: |
+  | Due January 29, 2026
+  | Focus: Notes 1-3
+  | Total Points: 90 + 10 (Self-Critique Comment and Uploading to GitHub) = 100
+  | Name: Melanie Jensen
+format: html
+urlcolor: blue
+engine: knitr
+execute: 
+  eval: true
+  echo: true
+  cache: true
+editor_options: 
+  chunk_output_type: console
+---
+
+Note that your homework should be completed in Quarto. You can just add your answers and code to this document in the appropriate part. The file should be rendered as an html document or pdf document (html is quicker to render and you will need an installation of LaTeX to render as a pdf). You will "turn in" this homework by uploading the files, the .qmd and output file, to your GitHub `Math_3190_Assignment` repository in the `Homework/Homework_1` directory. Make sure all supporting files (if there are any) are in this directory as well. You should use `git` and `Unix` commands in a terminal for this (i.e. don't manually upload files to GitHub). In addition, you will submit just your html or pdf file on Canvas to unlock the solutions. 
+
+Don't forget to also put a [self-critique comment]{.underline} on Canvas indicating what you did correctly and incorrectly and include any questions you may have about the assignment after submitting the assignment and thoroughly looking through the solutions.
+
+::: {.panel-tabset}
+
+# Problem 1 (18 points)
+
+In [two different code chunks]{.underline}, write two functions called `gghist` and `ggbox`. The first code chunk is already given below, but you'll need to add the second one. The `gghist` function should create a ggplot histogram of a variable that is given as a vector. The `ggbox` function should create a ggplot box plot when a single numeric vector is given or it should create side-by-side box plots if one numeric and one categorical variables are given. You can check if a vector is numeric with the `is.numeric()` function. Allow the user to indicate whether it should be horizontal or vertical box plots. Make sure you set `echo` and `eval` both to `true` for these code chunks. Also make sure to label the code chunks. 
+
+```{r}
+#| label: gghist
+
+library(tidyverse)
+
+gghist <- function(data, variable, group_var = NULL) {
+  col_data <- data |> pull({{ variable }})
+  
+  if (!is.numeric(col_data)) {
+    message("Variable is NOT Numeric") 
+  } else {
+    cat("Choose Histogram Type: \n1 Horizontal \n2 Vertical\n")
+    user_choice <- readline(prompt = "Enter choice (1 or 2): ")
+    
+    p <- ggplot(data, aes(x = {{ variable }})) +
+      geom_histogram(color = "black", fill = "lightblue4", bins = 10) + 
+      theme_minimal() + 
+      labs(title = paste("Histogram of", rlang::as_label(enquo(variable))))
+    
+    if (!rlang::quo_is_null(enquo(group_var))) {
+      p <- p + facet_wrap(vars({{ group_var }})) +
+               aes(fill = {{ group_var }}) + 
+               theme(legend.position = "none")
+    }
+    
+    if (!(user_choice %in% c("1", "2"))) {
+      return("Not a Valid Choice. Start Over") 
+    } else {
+      if (user_choice == "1") {
+        p <- p + coord_flip()
+      }
+      print(p)
+    }
+  }
+}
+
+```
+
+```{r}
+#| label: ggbox
+
+ggbox <- function(data, variable, group_var = NULL) {
+  col_data <- data |> pull({{ variable }})
+  
+  if (!is.numeric(col_data)) {
+    message("Variable is NOT Numeric") 
+  } else {
+    cat("Choose Layout: \n1 Horizontal \n2 Vertical\n")
+    user_choice <- readline(prompt = "Enter choice (1 or 2): ")
+    
+    if (rlang::quo_is_null(enquo(group_var))) {
+      p <- ggplot(data, aes(x = "Data", y = {{ variable }}))
+    } else {
+      p <- ggplot(data, aes(x = {{ group_var }}, y = {{ variable }}, fill = {{ group_var }}))
+    }
+    
+    p <- p + 
+      geom_boxplot(color = "black", fill = "lightblue4") + 
+      theme_minimal() + 
+      labs(title = paste("Boxplot of", rlang::as_label(enquo(variable))))
+    
+    if (!rlang::quo_is_null(enquo(group_var))) {
+      p <- p + theme(legend.position = "none")
+    }
+
+    if (!(user_choice %in% c("1", "2"))) {
+      return("Not a Valid Choice. Start Over") 
+    } else {
+      if (user_choice == "1") { p <- p + coord_flip() }
+      print(p)
+    }
+  }
+}
+
+```
+
+# Problem 2 (57 points)
+
+::: {.panel-tabset}
+
+## Part a (6 points)
+Learn about the built-in `read.fwf()` **R** function for use in downloading data from a URL into **R**. The `widths` and `strip.white` options will be especially useful here. Use this function to download the scores for all college basketball games for the 2024-2025 season [http://kenpom.com/cbbga26.txt](http://kenpom.com/cbbga26.txt) and then convert it to a tibble (load the `tidyverse` package first). The second team listed per line is the home team. It is not clear what the numbers, letters, or city names indicate after the second listed score. Notice that this is a "live" file that gets updated every day! So, your tibble size may change if you work on this assignment over the course of several days. That's fine. Give the code you used to download these data in a labeled code chunk.
+
+```{r}
+#| label: read_bb
+
+ccbga <- read.fwf("http://kenpom.com/cbbga26.txt", widths = c(11, 24, 3, 23, 4, 4, 21), strip.white = TRUE) |> 
+  as_tibble()
+
+head(ccbga)
+
+```
+
+
+Now lets practice using our tidy data/tidyverse tools! Using your `cbbga` tibble, try doing the following. In each part, save the object as a new tibble (like `cbbga2`, `cbbga3`, etc) and in each subsequent part, use the tibble you created in the previous part. 
+
+## Part b (2 points)
+Use `rename()` to rename all of your variables to names that make sense. Then print the first six rows of the new tibble using the `head()` function. 
+
+```{r}
+#| label: rename_columns
+
+ccbga2 <- ccbga |> 
+  rename("Game_Date" = "V1", "Away_Team" = "V2", "Away_Team_Points" = "V3", "Home_Team" = "V4", "Home_Team_Points" = "V5", "Game_Location/Neutral_Site_Indicator" = "V6", "Venue/City_Location" = "V7")
+
+head(ccbga2)
+
+```
+## Part c (2 points)
+Use `mutate()` to create a new column that gives the score differences (home team score minus away team score). Then print the first six rows of the new tibble using the `head()` function. 
+
+```{r}
+#| label: score_difference
+
+ccbga3 <- ccbga2 |> 
+  mutate(Score_Difference = Home_Team_Points - Away_Team_Points)
+
+head(ccbga3)
+
+```
+## Part d (2 points)
+Use `arrange()` to sort the data set by the home team alphabetically. Then print the first six rows of the new tibble using the `head()` function. 
+
+```{r}
+#| label: arrange_asc
+
+ccbga4 <- ccbga3 |> 
+  arrange(Home_Team)
+
+head(ccbga4)
+
+```
+
+## Part e (2 points)
+Use `select()` to remove the extra variable(s) that had that irrelevant information at the end of each line. Note: you can select every variable except one by using `!`. Then print the first six rows of the new tibble using the `head()` function. 
+
+```{r}
+#| label: select_relevant
+
+ccbga5 <- ccbga4 |> 
+  select(!c("Game_Location/Neutral_Site_Indicator", "Venue/City_Location"))
+
+head(ccbga5)
+
+```
+## Part f (3 points)
+Put parts a-e all together in one piping expression (with 5 pipes) and save this as a new object in **R**.
+
+```{r}
+#| label: all_together
+
+ccbga6 <- ccbga |> 
+  rename("Game_Date" = "V1", "Away_Team" = "V2", "Away_Team_Points" = "V3", "Home_Team" = "V4", "Home_Team_Points" = "V5", "Game_Location/Neutral_Site_Indicator" = "V6", "Venue/City_Location" = "V7") |> 
+  mutate(Score_Difference = Home_Team_Points - Away_Team_Points) |> 
+  arrange(Home_Team) |> 
+  select(!c("Game_Location/Neutral_Site_Indicator", "Venue/City_Location"))
+
+head(ccbga6)
+
+```
+## Part g (3 points)
+Use `filter()` to reduce the data down to only games played in 2025 (you could use the `lubridate` package for this, since it specializes in dealing with dates, but some base **R** packages will also work). Save this in a new tibble. **We will use this tibble with only the 2025 years from here on out**. 
+
+```{r}
+#| label: 2025_only
+
+library(lubridate)
+
+ccbga7 <- ccbga6 |> 
+  filter(year(mdy(Game_Date)) == 2025)
+
+head(ccbga7)
+
+```
+## Part h (4 points)
+Write a function that will filter the tibble to only games played by a given team. Demonstrate your function by displaying games played by SUU in 2025.
+
+```{r}
+#| label: suu_only
+
+ccbga8 <- ccbga7 |> 
+  filter(grepl("Southern Utah", Home_Team) | grepl("Southern Utah", Away_Team))
+
+head(ccbga8)
+
+```
+## Part i (7 points)
+Use `summarize()` to extract SUU's win/loss record and winning percentage for their 2025 games. Hint: using the `case_when()` function inside of a `mutate()` function to create a new variable that indicates whether SUU won or lost is helpful. You can verify on the Internet that SUU had 4 wins and 10 losses in 2025, so if your code retruns those values, you did it correctly. 
+
+```{r}
+#| label: win_loss
+
+ccbga9 <- ccbga8 |>
+  mutate(Outcome = case_when(
+    Home_Team == "Southern Utah" & Score_Difference > 0 ~ "Win",
+    Away_Team == "Southern Utah" & Score_Difference < 0 ~ "Win",
+    TRUE ~ "Loss")) |>
+  summarize(
+    Wins = sum(Outcome == "Win"),
+    Losses = sum(Outcome == "Loss"),
+    Winning_Percentage = Wins / (Wins + Losses)
+  )
+
+head(ccbga9)
+
+```
+## Part j (7 points)
+Generalize this by writing a function that will do this for a given team, and create a tibble with this information for all teams. Arrange this tibble first by winning percentage (descending) and by team (alphabetically) if there are any ties when it comes to winning percentage. A `for` loop and the `add_row()` function may be useful here.
+
+```{r}
+#| label: summary_stats
+
+summary_stats <- function(team_name, year) {
+  ccbga6 |>
+    filter(year(mdy(Game_Date)) == year) |> 
+    filter(Home_Team == team_name | Away_Team == team_name) |>
+    mutate(Outcome = case_when(
+      Home_Team == team_name & Score_Difference > 0 ~ "Win",
+      Away_Team == team_name & Score_Difference < 0 ~ "Win",
+      TRUE ~ "Loss"
+    )) |>
+    summarize(
+      Wins = sum(Outcome == "Win"),
+      Losses = sum(Outcome == "Loss"),
+      Winning_Percentage = Wins / (Wins + Losses)
+    )
+}
+
+ccbga10 <- map_dfr(unique(c(ccbga6$Home_Team, ccbga6$Away_Team)), \(team) {
+  ccbga6 |>
+    filter(Home_Team == team | Away_Team == team) |>
+    mutate(Outcome = case_when(Home_Team == team & Score_Difference > 0 ~ "Win", 
+                               Away_Team == team & Score_Difference < 0 ~ "Win", 
+                               TRUE ~ "Loss")) |>
+    summarize(Team = team, Wins = sum(Outcome == "Win"), Losses = sum(Outcome == "Loss"), Winning_Percentage = Wins / (Wins + Losses))}) |> 
+  arrange(desc(Winning_Percentage), Team)
+
+```
+## Part k (5 points)
+With only the 2025 games, use the `gghist()` you wrote in Problem 1 on the score differences variable you created in part c. Add appropriate labels and a title to your graph. Also, use the `#| fig-width:`, `#| fig-height:`, `#| out-width:`, and `#| fig-align:` code chunk options to center the figure and then to adjust your figure to a size you like. Play around with different sizes to see what those options adjust. 
+
+::: {.panel-tabset}
+
+### Choice 1
+```{r}
+#| label: score_diff_hist_1
+#| fig-align: center
+#| out-width: "70%"
+#| fig-width: 7
+#| fig-height: 5
+
+assign("readline", function(...) "1", envir = .GlobalEnv)
+
+gghist(filter(ccbga6 |> filter(year(mdy(Game_Date)) == 2025)), Score_Difference)
+
+rm(readline, envir = .GlobalEnv)
+
+```
+### Choice 2
+```{r}
+#| label: score_diff_hist_2
+#| fig-align: center
+#| out-width: "70%"
+#| fig-width: 7
+#| fig-height: 5
+
+assign("readline", function(...) "2", envir = .GlobalEnv)
+
+gghist(filter(ccbga6 |> filter(year(mdy(Game_Date)) == 2025)), Score_Difference)
+
+rm(readline, envir = .GlobalEnv)
+```
+
+:::
+
+## Part l (9 points)
+Filter the tibble with all 2025 games to only include Utah Tech or Southern Utah, then crate a tibble or data frame where each row is a game played by either team that has one column indicating the school, Utah Tech or Southern Utah, and a second column indicating the number of points that team played, regardless of whether the team was home or away. Then use your `ggbox()` function to create a side-by-side boxplot of number of points scored in all 2025 games for each team.
+
+Note, this is a little challenging. The most straightforward way to do this is to use the `pivot_longer()` function with `cols = ` the names of the two columns that have the away and the home teams (the names of these columns should not be in quotes, but they should be in a vector `c()`). Try to do this yourself first, but using AI for some help is fine. 
+
+::: {.panel-tabset}
+
+### Choice 1
+```{r}
+#| label: SUU_UT_boxplot_1
+#| fig-align: center
+#| out-width: "70%"
+#| fig-width: 7
+#| fig-height: 5
+
+assign("readline", function(...) "1", envir = .GlobalEnv)
+
+ggbox(ccbga6 |> filter(Home_Team %in% c("Southern Utah", "Utah Tech") | 
+  Away_Team %in% c("Southern Utah", "Utah Tech")) |> 
+  filter(year(mdy(Game_Date)) == 2025) |> 
+  pivot_longer(
+    cols = c(Home_Team, Away_Team), 
+    names_to = "Venue", 
+    values_to = "Team") |> filter(Team %in% c("Southern Utah", "Utah Tech")) |> 
+  mutate(Points_Scored = if_else(Venue == "Home_Team", Home_Team_Points, Away_Team_Points)) |> 
+  select(Team, Points_Scored), Points_Scored, Team)
+
+rm(readline, envir = .GlobalEnv)
+```
+### Choice 2
+```{r}
+#| label: SUU_UT_boxplot_2
+#| fig-align: center
+#| out-width: "70%"
+#| fig-width: 7
+#| fig-height: 5
+
+assign("readline", function(...) "2", envir = .GlobalEnv)
+
+ggbox(ccbga6 |> filter(Home_Team %in% c("Southern Utah", "Utah Tech") | 
+  Away_Team %in% c("Southern Utah", "Utah Tech")) |> 
+  filter(year(mdy(Game_Date)) == 2025) |> 
+  pivot_longer(
+    cols = c(Home_Team, Away_Team), 
+    names_to = "Venue", 
+    values_to = "Team") |> filter(Team %in% c("Southern Utah", "Utah Tech")) |> 
+  mutate(Points_Scored = if_else(Venue == "Home_Team", Home_Team_Points, Away_Team_Points)) |> 
+  select(Team, Points_Scored), Points_Scored, Team)
+
+rm(readline, envir = .GlobalEnv)
+
+```
+
+::: 
+
+## Part m (5 points)
+Create one more appropriate graphs for the 2025 basketball data. This graph could be anything you'd like as long as you use `ggplot2`, it shows something meaningful, and it is not the same as the graphs you made in parts k or l. 
+
+::: {.panel-tabset}
+
+### Choice 1
+```{r}
+#| label: SUU_UT_hist_1
+#| fig-align: center
+#| out-width: "70%"
+#| fig-width: 7
+#| fig-height: 5
+
+assign("readline", function(...) "1", envir = .GlobalEnv)
+
+gghist(ccbga6 |> filter(Home_Team %in% c("Southern Utah", "Utah Tech") | 
+  Away_Team %in% c("Southern Utah", "Utah Tech")) |> 
+  filter(year(mdy(Game_Date)) == 2025) |> 
+  pivot_longer(
+    cols = c(Home_Team, Away_Team), 
+    names_to = "Venue", 
+    values_to = "Team") |> filter(Team %in% c("Southern Utah", "Utah Tech")) |> 
+  mutate(Points_Scored = if_else(Venue == "Home_Team", Home_Team_Points, Away_Team_Points)) |> 
+  select(Team, Points_Scored), Points_Scored, Team)
+
+rm(readline,envir = .GlobalEnv)
+
+```
+### Choice 2
+```{r}
+#| label: SUU_UT_hist_2
+#| fig-align: center
+#| out-width: "70%"
+#| fig-width: 7
+#| fig-height: 5
+
+assign("readline", function(...) "2", envir = .GlobalEnv)
+
+gghist(ccbga6 |> filter(Home_Team %in% c("Southern Utah", "Utah Tech") | 
+  Away_Team %in% c("Southern Utah", "Utah Tech")) |> 
+  filter(year(mdy(Game_Date)) == 2025) |> 
+  pivot_longer(
+    cols = c(Home_Team, Away_Team), 
+    names_to = "Venue", 
+    values_to = "Team") |> filter(Team %in% c("Southern Utah", "Utah Tech")) |> 
+  mutate(Points_Scored = if_else(Venue == "Home_Team", Home_Team_Points, Away_Team_Points)) |> 
+  select(Team, Points_Scored), Points_Scored, Team)
+
+rm(readline,envir = .GlobalEnv)
+
+```
+
+:::
+
+:::
+
+# Problem 3 (15 points)
+Repeat parts b-e and g of Problem 2 using Python in Quarto. First, pass the original object that you read in from the website to Python without any changes to it (you do not need to read the file from the web in Python, but you can if you'd like) and then use `pandas` (or `polars` if you'd like) to rename the columns as indicated in part b, add the columns specified in part c, arrange the data as in part d, drop the "garbage" column as in part e, and filter it down as in part g. The `pandas` functions `rename`, `assign` (instead of `mutate`), `drop` (instead of `select`) and `str.contains` (used to select the right rows) will be useful here. Be sure to follow the guide in Notes 3 to properly install Python, install the `pandas` library and to load it in **R**.
+
+::: {.panel-tabset}
+
+## Part a: Python Setup
+
+```{r}
+#| label: python_connection
+library(reticulate)
+
+py$py_ccbga <- ccbga
+
+```
+```{python}
+#| label: python_read_in
+import pandas as pd
+
+py_ccbga = r.ccbga
+
+py_ccbga.head()
+
+```
+
+req = urllib.request.Request("http://kenpom.com/cbbga26.txt", headers={'User-Agent': 'Mozilla/5.0'})
+with urllib.request.urlopen(req) as response:
+    content = response.read().decode('utf-8')
+py_ccbga = pd.read_fwf(io.StringIO(content), header=None)
+
+## Part b - Python Repeat
+Do the equivalent using python: Use `rename()` to rename all of your variables to names that make sense. Then print the first six rows of the new tibble using the `head()` function. 
+
+```{python}
+#| label: part_b_repeat
+
+py_ccbga1 = py_ccbga.copy()
+
+py_ccbga1.columns = new_columns = [
+  "Game_Date", "Away_Team", "Away_Team_Points", "Home_Team", "Home_Team_Points", "Game_Location/Neutral_Site_Indicator", "Venue/City_Location"]
+
+py_ccbga1.head()
+
+```
+
+## Part c - Python Repeat
+Do the equivalent using python: Use `mutate()` to create a new column that gives the score differences (home team score minus away team score). Then print the first six rows of the new tibble using the `head()` function. 
+
+```{python}
+#| label: part_c_repeat
+
+py_ccbga2 = py_ccbga1.copy()
+
+py_ccbga2['Score_Difference'] = py_ccbga2['Home_Team_Points'] - py_ccbga2['Away_Team_Points']
+
+py_ccbga2.head()
+
+```
+## Part d - Python Repeat
+Do the equivalent using python: Use `arrange()` to sort the data set by the home team alphabetically. Then print the first six rows of the new tibble using the `head()` function. 
+
+```{python}
+#| label: part_d_repeat
+
+py_ccbga3 = py_ccbga2.sort_values("Home_Team", ascending=True)
+
+py_ccbga3.head()
+
+```
+## Part e - Python Repeat
+Do the equivalent using python: Use `select()` to remove the extra variable(s) that had that irrelevant information at the end of each line. Note: you can select every variable except one by using `!`. Then print the first six rows of the new tibble using the `head()` function. 
+
+```{python}
+#| label: part_e_repeat
+
+py_ccbga4 = py_ccbga3.drop(columns = ["Game_Location/Neutral_Site_Indicator", "Venue/City_Location"])
+
+py_ccbga4.head()
+
+```
+## Part g - Python Repeat
+Do the equivalent using python: Use `filter()` to reduce the data down to only games played in 2025 (you could use the `lubridate` package for this, since it specializes in dealing with dates, but some base **R** packages will also work). Save this in a new tibble. **We will use this tibble with only the 2025 years from here on out**. 
+
+```{python}
+#| label: part_g_repeat
+
+py_ccbga5 = py_ccbga4[py_ccbga4['Game_Date'].str.contains("2025")]
+
+py_ccbga5.head()
+
+```
+
+:::
+
+:::

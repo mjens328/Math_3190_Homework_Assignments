@@ -1,0 +1,810 @@
+---
+title: "**MATH 3190 Homework 4**"
+subtitle: |
+  Due February 19, 2026\
+  Focus: Notes 6\
+  Name: Melanie Jensen\
+  Total Points: 90 + 10 (Self-Critique Comment and Uploading to GitHub) = 100
+format: 
+  html:
+    embed-resources: true # Keep this so the html file is easily shareable.
+urlcolor: blue
+engine: r
+execute: # Will set these as the default for all code chunks
+  message: false
+  warning: false
+  eval: true
+  echo: true
+  cache: true
+editor_options: 
+  chunk_output_type: console
+editor: 
+  markdown: 
+    wrap: 72
+---
+
+Note that your homework should be completed in Quarto. You can just add
+your answers and code to this document in the appropriate part. The file
+should be rendered as an html document or pdf document (html is quicker
+to render and you will need an installation of LaTeX to render as a
+pdf). You will "turn in" this homework by uploading the files, the .qmd
+and output file, to your GitHub `Math_3190_Assignment` repository in the
+`Homework/Homework_4` directory. Make sure all supporting files (if
+there are any) are in this directory as well. You should use `git` and
+`Unix` commands in a terminal for this (i.e. don't manually upload files
+to GitHub). In addition, you will submit just your html or pdf file on
+Canvas to unlock the solutions.
+
+Don't forget to also put a [self-critique comment]{.underline} on Canvas
+indicating what you did correctly and incorrectly and include any
+questions you may have about the assignment after submitting the
+assignment and thoroughly looking through the solutions.
+
+Some of the parts in this homework, like 1a, 2b, 2c, 3a, and 3b require
+writing down some math-heavy expressions. You may either type it up
+using LaTeX-style formatting in Quarto (preferred), or you can write it
+by hand (neatly) and include pictures or scans of your work in your
+Quarto document.
+
+# Problem 1 (33 points)
+
+Suppose we want to find the value of $x$ and the objection function
+value for finding the global maximum and minimum of the function
+$f(x)=\ln(1+x^2)(1+x)e^{-x^2}$. We will implement gradient descent and
+Newton's method for finding these extrema.
+
+### Part a (5 points)
+
+Find $f'(x)$ for this function. Do this by hand as a nice derivative
+refresher. You don't need to include all of your work, though. Feel free
+to check your answer using something like Wolfram\|Alpha. Write down the
+derivative here.
+
+$$
+f(x) = e^{-x^2}ln(1+x^2) + xe^{-x^2}ln(1+x^2)
+$$
+
+a.  $e^{-x^2}ln(1+x^2)$\
+    $\begin{alignedat}{2}
+     u &= e^{-x^2} & \qquad du &= -2xe^{-x^2} \\
+     v &= ln(1+x^2) & \qquad dv &= \frac{2x}{1+x^2} \\
+    \end{alignedat}$
+
+b.  $xe^{-x^2}ln(1+x^2)$\
+    $\begin{alignedat}{2}
+     u &= xe^{-x^2} & \qquad du &= (1-2x^2)e^{-x^2} \\
+     v &= ln(1+x^2) & \qquad dv &= \frac{2x}{x^2+1} \\
+    \end{alignedat}$
+
+$$
+f'(x) = (e^{-x^2})(\frac{2x}{1+x^2}) + (-2xe^{-x^2})(ln(1+x^2)) + (xe^{-x^2})(\frac{2x}{x^2+1}) + ((1-2x^2)e^{-x^2})(ln(1+x^2))
+$$
+
+$$
+f'(x) = (-2x^2 - 2x + 1)e^{-x^2}ln(1+x^2) + \frac{2x(1+x)e^{-x^2}}{1+x^2}
+$$
+
+### Part b (4 points)
+
+Below is the code of a function that implements gradient descent using a
+backtracking line search each iteration to find $\gamma_k$: the step
+size. This function takes eight inputs:
+
+-   The starting value (or vector)
+-   The function to optimize
+-   The function's derivative (or gradient)
+-   A logical indicating if we want to find a max with a default of
+    `FALSE`.
+-   The maximum number of iterations with a default of 200
+-   The initial step size with a default of 1
+-   The line search beta parameter with a default of 0.5.
+-   The stopping tolerance with a default of `1e-10`.
+
+The output of this function is a list with the $x$ value (or vector)
+that optimizes the function, the function value at that point, and the
+number of iterations it took to converge. This function works in the
+case of one dimension or multiple dimensions since you'll use it again
+in problem 2.
+
+Take a few minutes to study this function to make sure you understand
+how it works and what it is doing. Write a few sentences explaining how
+this function works.
+
+```{r}
+#| label: backtracking_function
+#| eval: true
+#| echo: true
+
+gradient_desc <- function(starting, f, gradient, max = F, maxit = 200, step_size = 1, line_parameter = 0.5, tol = 1e-10) {
+
+  if(max == T) {
+    obj_func <- function(x) {
+      -f(x)
+    }
+    func_deriv <- function(x) {
+      -gradient(x)
+    }
+  } else {
+    obj_func <- f
+    func_deriv <- gradient
+  }
+  xk <- starting
+  for(k in 1:maxit) {
+    gamma <- step_size
+    line_beta <- line_parameter
+    # Below is the backtracking line search
+    while(obj_func(xk - gamma * func_deriv(xk)) > 
+          obj_func(xk) - gamma/4 * sum(func_deriv(xk)^2)) {
+      gamma <- line_beta * gamma
+    }
+    # Once we have a good step size, continue
+    xnew <- xk - gamma * func_deriv(xk)
+    if(norm(xk - xnew, type = "2") < tol) {
+      break
+    }
+    xk <- xnew
+    }
+  return(list(x = xk, function_val = f(xk), iters = k))
+}
+```
+
+First, the function determines whether the user wants to minimize or
+maximize the objective function. If the user wants to maximize the
+objective function, the function will minimize the negative objective
+function. Then, the function performs backtracking line search. This
+algorithm starts with an initial step size and then checks if the
+function value at the new point (after taking a step in the direction of
+the negative gradient) is sufficiently smaller than the function value
+at the current point. If it is not, the step size is reduced by
+multiplying it by a line parameter (which is between 0 and 1). This
+process continues until a suitable step size is found. After finding a
+good step size, the function updates the current point and checks for
+convergence by comparing the distance between the new point and the
+current point to a specified tolerance. If convergence is achieved, the
+loop breaks, and the function returns the optimal point, the function
+value at that point, and the number of iterations taken to converge.
+
+### Part c (5 points)
+
+Use the gradient descent function to find the global **min** of
+$f(x)=\ln(1+x^2)(1+x)e^{-x^2}$. Try using several starting points. Keep
+track of and report the number of iterations needed to converge at the
+different starting points.
+
+```{r}
+#| label: gradient descent min example
+
+library(Deriv)
+library(ggplot2)
+
+f <- function(x) {
+  log(1+x^2)*(1+x)*exp(-x^2)
+}
+f_prime <- function(x) {
+  (-2*x^2-2*x+1)*exp(-x^2)*log(1+x^2)+(2*x*(1+x)*exp(-x^2))/(1+x^2)
+}
+
+ggplot(data.frame(x = c(-5, 5)), aes(x = x)) +
+  stat_function(fun = f, color = "royalblue", size = 1) +
+  
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
+
+  labs(title = expression(paste(f(x) == ln(1+x^2)(1+x)*e^{-x^2})),
+       x = "x", y = "f(x)") +
+  theme_minimal()
+
+gradient_desc(starting = -3, f = f, gradient = f_prime)
+gradient_desc(starting = -2, f = f, gradient = f_prime)
+gradient_desc(starting = -1, f = f, gradient = f_prime)
+gradient_desc(starting = 0, f = f, gradient = f_prime)
+gradient_desc(starting = 1, f = f, gradient = f_prime)
+gradient_desc(starting = 2, f = f, gradient = f_prime)
+gradient_desc(starting = 3, f = f, gradient = f_prime)
+
+```
+
+The approximate minimum occurs at $x = -1.469439$ with a function value
+of $-0.06232362$. Even with a starting point of $x = -1$ it still took
+$31$ iterations to converge.
+
+### Part d (4 points)
+
+Use the gradient descent function to find the global **max** of
+$f(x)=\ln(1+x^2)(1+x)e^{-x^2}$. Again, try several starting points. Keep
+track of and report the number of iterations needed to converge at the
+different starting points.
+
+```{r}
+#| label: gradient descent max example
+
+f <- function(x) {
+  log(1+x^2)*(1+x)*exp(-x^2)
+}
+f_prime <- function(x) {
+  (-2*x^2-2*x+1)*exp(-x^2)*log(1+x^2)+(2*x*(1+x)*exp(-x^2))/(1+x^2)
+}
+
+ggplot(data.frame(x = c(-5, 5)), aes(x = x)) +
+  stat_function(fun = f, color = "royalblue", size = 1) +
+  
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = 0.5) +
+
+  labs(title = expression(paste(f(x) == ln(1+x^2)(1+x)*e^{-x^2})),
+       x = "x", y = "f(x)") +
+  theme_minimal()
+
+gradient_desc(starting = -3, f = f, gradient = f_prime, max = T)
+gradient_desc(starting = -2, f = f, gradient = f_prime, max = T)
+gradient_desc(starting = -1, f = f, gradient = f_prime, max = T)
+gradient_desc(starting = 0, f = f, gradient = f_prime, max = T)
+gradient_desc(starting = 1, f = f, gradient = f_prime, max = T)
+gradient_desc(starting = 2, f = f, gradient = f_prime, max = T)
+gradient_desc(starting = 3, f = f, gradient = f_prime, max = T)
+
+```
+
+The approximate maximum occurs at $x = 0.9868668$ with a function value
+of $0.5101816$. Even with a starting value of 1, it still took $22$
+iterations to converge.
+
+### Part e (8 points)
+
+Use the fact that $$
+f''(x)=\dfrac{2e^{-x^2}}{(1+x^2)^2}\bigg((2x^3+2x^2-3x-1)(1+x^2)^2\ln(1+x^2)-4x^5-4x^4-3x^3-5x^2+3x+1\bigg)
+$$
+
+to implement Newton's method to find the global max **and** the global
+min. Use the same starting points you did in parts c and d. Keep track
+of and report the number of iterations needed to converge at the
+different starting points. And yes, that second derivative is very
+messy! This is one reason why Newton's method is less popular. You don't
+have to write a function for this part to implement Newton's method, but
+you can if you'd like.
+
+```{r}
+#| label: newton's method min and max
+
+library(tidyverse)
+
+# Max
+
+f <- function(x) {
+  log(1+x^2)*(1+x)*exp(-x^2)
+}
+f_prime <- function(x) {
+  (-2*x^2-2*x+1)*exp(-x^2)*log(1+x^2)+(2*x*(1+x)*exp(-x^2))/(1+x^2)
+}
+f_double_prime <- function(x) {
+  ((2*exp(-x^2))/((1+x^2)^2))*(((2*x^3+x*x^2-3*x-1)*(1+x^2)^2)*log(1+x^2)-
+                                 4*x^5-4*x^4-3*x^3-5*x^2+3*x+1)
+}
+
+maxit <- 200
+betak <- c(-3, -2, -1, 0, 1, 2, 3)
+found_roots <- c()
+iters <- c()
+
+for (i in betak) {
+  x <- i
+  for (k in 1:maxit) {
+    x_next <- x - f_prime(x) / f_double_prime(x)
+    if (abs(x_next - x) < 1e-10) {
+      break}
+    x <- x_next}
+  found_roots <- c(found_roots, x)
+  iters <- c(iters, k)}
+n_max_results <- tibble(
+  start_val = betak,
+  x = found_roots,
+  function_val = round(f(found_roots),10),
+  iterations = iters)
+
+# Min
+
+found_roots <- c()
+iters <- c()
+
+for (i in betak) {
+  x <- i
+  for (k in 1:maxit) {
+    x_next <- x - f_prime(x) / abs(f_double_prime(x))
+    if (abs(x_next - x) < 1e-10) {
+      break}
+    x <- x_next}
+  found_roots <- c(found_roots, x)
+  iters <- c(iters, k)}
+n_min_results <- tibble(
+  start_val = betak,
+  x = found_roots,
+  function_val = round(f(found_roots),10),
+  iterations = iters)
+
+```
+
+### Part f (3 points)
+
+Compare the number of iterations needed for convergence for gradient
+descent and for Newton's method.
+
+```{r}
+#| label: comparison
+
+g_min_results <- tibble(
+  start_val = betak,
+  x = c(gradient_desc(starting = -3, f = f, gradient = f_prime)$x, 
+        gradient_desc(starting = -2, f = f, gradient = f_prime)$x, 
+        gradient_desc(starting = -1, f = f, gradient = f_prime)$x, 
+        gradient_desc(starting = 0, f = f, gradient = f_prime)$x, 
+        gradient_desc(starting = 1, f = f, gradient = f_prime)$x, 
+        gradient_desc(starting = 2, f = f, gradient = f_prime)$x, 
+        gradient_desc(starting = 3, f = f, gradient = f_prime)$x),
+  function_val = c(gradient_desc(starting = -3, f = f, 
+                                 gradient = f_prime)$function_val, 
+                   gradient_desc(starting = -2, f = f, 
+                                 gradient = f_prime)$function_val, 
+                   gradient_desc(starting = -1, f = f, 
+                                 gradient = f_prime)$function_val, 
+                   gradient_desc(starting = 0, f = f, gradient = f_prime)$function_val, 
+                   gradient_desc(starting = 1, f = f, gradient = f_prime)$function_val, 
+                   gradient_desc(starting = 2, f = f, gradient = f_prime)$function_val, 
+                   gradient_desc(starting = 3, f = f, gradient = f_prime)$function_val), 
+  iterations = c(gradient_desc(starting = -3, f = f, gradient = f_prime)$iters, 
+                 gradient_desc(starting = -2, f = f, gradient = f_prime)$iters, 
+                 gradient_desc(starting = -1, f = f, gradient = f_prime)$iters, 
+                 gradient_desc(starting = 0, f = f, gradient = f_prime)$iters, 
+                 gradient_desc(starting = 1, f = f, gradient = f_prime)$iters, 
+                 gradient_desc(starting = 2, f = f, gradient = f_prime)$iters, 
+                 gradient_desc(starting = 3, f = f, gradient = f_prime)$iters)
+)
+
+g_max_results <- tibble(
+  start_val = betak,
+  x = c(gradient_desc(starting = -3, f = f, gradient = f_prime, max = T)$x, 
+        gradient_desc(starting = -2, f = f, gradient = f_prime, max = T)$x, 
+        gradient_desc(starting = -1, f = f, gradient = f_prime, max = T)$x, 
+        gradient_desc(starting = 0, f = f, gradient = f_prime, max = T)$x, 
+        gradient_desc(starting = 1, f = f, gradient = f_prime, max = T)$x, 
+        gradient_desc(starting = 2, f = f, gradient = f_prime, max = T)$x, 
+        gradient_desc(starting = 3, f = f, gradient = f_prime, max = T)$x),
+  function_val = c(gradient_desc(starting = -3, f = f, gradient = f_prime, max = T)$function_val, 
+                   gradient_desc(starting = -2, f = f, gradient = f_prime, max = T)$function_val, 
+                   gradient_desc(starting = -1, f = f, gradient = f_prime, max = T)$function_val, 
+                   gradient_desc(starting = 0, f = f, gradient = f_prime, max = T)$function_val, 
+                   gradient_desc(starting = 1, f = f, gradient = f_prime, max = T)$function_val, 
+                   gradient_desc(starting = 2, f = f, gradient = f_prime, max = T)$function_val, 
+                   gradient_desc(starting = 3, f = f, gradient = f_prime, max = T)$function_val),
+  iterations = c(gradient_desc(starting = -3, f = f, gradient = f_prime, max = T)$iters, 
+                 gradient_desc(starting = -2, f = f, gradient = f_prime, max = T)$iters, 
+                 gradient_desc(starting = -1, f = f, gradient = f_prime, max = T)$iters, 
+                 gradient_desc(starting = 0, f = f, gradient = f_prime, max = T)$iters, 
+                 gradient_desc(starting = 1, f = f, gradient = f_prime, max = T)$iters, 
+                 gradient_desc(starting = 2, f = f, gradient = f_prime, max = T)$iters, 
+                 gradient_desc(starting = 3, f = f, gradient = f_prime, max = T)$iters),
+)
+
+comparison_tibble <- g_min_results |>
+  inner_join(g_max_results, by = "start_val", suffix = c("_gmin", "_gmax")) |>
+  inner_join(n_min_results, by = "start_val") |> 
+  rename(x_nmin = x, function_val_nmin = function_val, iterations_nmin = iterations) |>
+  inner_join(n_max_results, by = "start_val") |> 
+  rename(x_nmax = x, function_val_nmax = function_val, iterations_nmax = iterations)
+
+print(comparison_tibble)
+
+```
+
+It appears that newton's method did better with identifying the max of
+this function as only took 12 iterations to converge compared to 22
+iterations when both algorithms started at 1. However, it did worse at
+identifing the min of this function as it took 58 iterations to converge
+compared to 31 iterations when both algorithms started at -1.
+
+### Part g (4 points)
+
+Use the `optimize()` function in **R** to find the global max and min
+for the function $f$.
+
+```{r}
+#| label: built in optimize
+
+f <- function(x) {
+  log(1+x^2)*(1+x)*exp(-x^2)
+}
+
+optimize(f, c(-3,3))
+optimize(f, c(-3,3), maximum = TRUE)
+
+```
+
+# Problem 2 (26 points)
+
+Suppose $\boldsymbol{x} = (x_1,\dots, x_n )^T$ are independent and
+identically distributed random variables with probability density
+function (pdf) given by $$
+f(x_i|\theta) = \theta(1-x_i)^{\theta-1};\ \ 0\le x_i< 1,\ 0<\theta<\infty,\ i=1,\dots,n
+$$
+
+### Part a (4 points)
+
+Using ggplot, plot the probability density function (pdf) for an
+individual $x_i$ given $\theta=0.5$ and then again for $\theta=5$.
+
+```{r}
+#| label: probability density plot
+
+f <- function(x, theta = theta) {
+  theta*(1-x)^(theta-1)
+}
+
+ggplot(data.frame(x = c(0, 0.98)), aes(x = x)) +
+  facet_wrap(~theta, labeller = label_both) +
+  stat_function(data = data.frame(x = c(0, 0.9999), theta = 0.5), # range not to 1 due to dividing by 0 
+                fun = f, args = list(theta = 0.5), color = "steelblue") +
+  stat_function(data = data.frame(x = c(0, 1), theta = 5), 
+                fun = f, args = list(theta = 2), color = "steelblue") +
+  labs(y = "Density", x = "x") +
+  theme_minimal()
+
+```
+
+### Part b (5 points)
+
+Give the likelihood $L(\theta|\boldsymbol{x})$ and log-likelihood
+$\ell(\theta|\boldsymbol{x})$ functions in this situation.
+
+Likelihood Function
+
+$$ 
+L(\theta|\boldsymbol{x}) = \prod_{i=1}^{n}\theta(1-x_i)^{\theta-1} \\
+L(\theta|\boldsymbol{x}) = \theta^{n}\prod_{i=1}^{n}(1-x_i)^{\theta-1}
+$$
+
+Log-Likelihood Function
+
+$$
+\ell(\theta|\boldsymbol{x}) = ln(\theta^{n}\prod_{i=1}^{n}(1-x_i)^{\theta-1}) \\
+$$
+
+$$
+\ell(\theta|\boldsymbol{x}) = ln(\theta^{n}) + ln(\prod_{i=1}^{n}(1-x_i)^{\theta-1}) \\
+$$
+
+$$
+\ell(\theta|\boldsymbol{x}) = ln(\theta^{n}) + \sum_{i=1}^{n}ln((1-x_i)^{\theta-1}) \\
+$$
+
+$$
+\ell(\theta|\boldsymbol{x}) = nln(\theta) + \sum_{i=1}^{n}(\theta-1)ln(1-x_i) \\
+$$
+
+$$
+\ell(\theta|\boldsymbol{x}) = nln(\theta) + (\theta-1)\sum_{i=1}^{n}ln(1-x_i) \\
+$$
+
+### Part c (5 points)
+
+Find the Maximum Likelihood Estimator (MLE) $\hat{\theta}$ for $\theta$.
+
+$$
+\frac{d\ell}{d\theta} = \frac{n}{\theta} + \sum_{i=1}^{n}ln(1-x_i) = 0 \\
+\frac{n}{\theta} = -\sum_{i=1}^{n}ln(1-x_i) \\
+\hat{\theta} = -\frac{n}{\sum_{i=1}^{n}ln(1-x_i)}
+$$
+
+### Part d (3 points)
+
+Show that your estimator is in fact a maximum. That is, check the second
+derivative of the log-likelihood.
+
+$$
+\frac{d^{2}\ell}{d\theta^{2}} = -\frac{n}{\theta^{2}} 
+$$ 
+
+Since $n$ and $\theta^2$ are both positive,
+$\frac{d^{2}\ell}{d\theta^{2}} < 0$ for all $\theta \in (0, \infty)$.
+Because the log-likelihood is strictly concave over its entire domain,
+the unique critical point $\hat{\theta}$ is the global maximum.
+
+### Part e (2 points)
+
+Find the MLE if the data values are given below. Note, the actual
+$\theta$ value used to generate these data was $\theta=7.3$.
+
+```{r}
+#| label: mle_values
+x <- c(0.0194, 0.0053, 0.2488, 0.0456, 0.2059, 0.0992, 0.1168, 0.3705, 
+       0.2129, 0.018, 0.0464, 0.1401, 0.0759, 0.1588, 0.0334, 0.2931, 
+       0.0662, 0.2292, 0.1581, 0.3462, 0.035, 0.1086, 0.0793, 0.2095, 
+       0.1419, 0.1835, 0.1107, 0.0764, 0.1331, 0.042, 0.0911, 0.1608)
+
+theta_hat <- function(x) {
+  n <- length(x)
+  running_sum_log <- 0
+  for (i in x) {
+    current_log <- log(1 - i)
+    running_sum_log <- running_sum_log + current_log}
+  estimate_theta <- -n / running_sum_log
+  return(estimate_theta)
+}
+
+theta_hat(x)
+
+```
+
+### Part f (7 points)
+
+To get an idea of how variable the maximum likelihood estimator is in
+this case, let's generate many samples of size 32 from this distribution
+(which is a Beta distribution with parameters $1$ and $\theta$, but you
+don't really need to know that). We can do this by using
+`rbeta(32, 1, 7.3)`.
+
+Using the code below, generate at least 10,000 samples this way, compute
+the MLE for each, and then plot a histogram of the values using ggplot.
+Plot a vertical line at the true $\theta$ value of 7.3 (you can use
+`geom_vline(xintercept = 7.3)` for this). On the plot somewhere,
+indicate what the standard deviation in those estimates is. Of course,
+this code is incomplete, so you'll have to complete it. Once you do,
+make sure to change the `eval` option to `true`.
+
+Once you've completed the code for the samples of size 32, repeat this
+but instead of taking samples of size 32, take samples of size 100. How
+does this change the histogram, where the distribution is centered, and
+the standard deviation of the estimates, if at all?
+
+```{r}
+#| label: mle_sim_32
+#| eval: false # Change this to true once you fill in the code
+#| fig-width: 6
+#| fig-height: 5
+#| out-width: "70%"
+#| warning: false
+set.seed(2026)
+theta_hat <- rep(0, 10000) # Initialize the vector
+for(i in 1:10000) {
+  x_sim <- rbeta(32, 1, 7.3)
+  n <- 32
+  running_sum_log <- 0 
+  for (j in x_sim) {
+    current_log <- log(1 - j)
+    running_sum_log <- running_sum_log + current_log
+  }
+  theta_hat[i] <- -n / running_sum_log
+}
+
+ggplot(data.frame(theta_hat), aes(x = theta_hat)) +
+  geom_histogram(fill = "steelblue", color = "white") +
+  theme_minimal()
+
+```
+
+# Problem 3 (31 points)
+
+We implemented optimization to maximize the likelihood for a Poisson
+regression problem in the notes to estimate the $\beta$ (intercept and
+slope) values. Let's do something similar for find the
+$\boldsymbol{\beta}$ vector by maximizing the likelihood in logistic
+regression.
+
+In logistic regression, we attempt to predict the probability of a
+success for a given case. We can use the Bernoulli random variable for
+this. For a Bernoulli random variable,
+$P(Y=y_i) = p_i^{y_i}(1-p_i)^{1-y_i}$ for $y_i=0,1$ where $p_i$ is the
+probability of a success. In our case, for logistic regression, we have
+$\text{logit}(p_i)=\ln\left(\dfrac{p_i}{1-p_i}\right)=\mathbf{X}_i\boldsymbol{\beta}$.
+That means
+$p_i = \dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}$.
+
+The likelihood function,
+$L(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y})$, for the logistic
+regression for a sample of size $n$ is $$
+\begin{align*}
+L(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) &=\prod_{i=1}^n p_i^{y_i}(1-p_i)^{1-y_i}\\
+&=\prod_{i=1}^n\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]^{y_i}\left(1-\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right)^{1-y_i}
+\end{align*}
+$$
+
+### Part a (7 points)
+
+Using the above likelihood, show that the log likelihood function is 
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y})=\sum_{i=1}^ny_i\ln\left(\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right) + \sum_{i=1}^n(1-y_i)\ln\left(\dfrac{1}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right)
+$$ 
+and then show it can be equivalently written 
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = \sum_{i=1}^ny_i(\mathbf{X}_i\boldsymbol{\beta}) - \sum_{i=1}^n\ln\Big(1 + \exp(\mathbf{X}_i\boldsymbol{\beta})\Big)
+$$ 
+using properties of logarithms.
+
+$$
+L(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = \prod_{i=1}^n\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]^{y_i}\left(1-\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right)^{1-y_i} \\
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = \ln{\prod_{i=1}^n\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]^{y_i}\left(1-\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right)^{1-y_i}}
+$$
+
+$$
+\left(1-\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right) = \left(\left[\dfrac{1+\exp(\mathbf{X}_i\boldsymbol{\beta})-\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right) =  \left(\left[\dfrac{1}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right)
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = \sum_{i=1}^n\ln{\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]^{y_i}\left(\left[\dfrac{1}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right)^{1-y_i}} \\
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = \sum_{i=1}^n\ln{\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]^{y_i}}+\sum_{i=1}^n\ln{\left(\left[\dfrac{1}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]\right)^{1-y_i}} \\
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = \sum_{i=1}^n{y_i}\ln{\left[\dfrac{\exp(\mathbf{X}_i\boldsymbol{\beta})}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]}+\sum_{i=1}^n(1-y_i)\ln{\left[\dfrac{1}{1+\exp(\mathbf{X}_i\boldsymbol{\beta})}\right]}
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = 
+\sum_{i=1}^ny_i\ln\left[\exp(\mathbf{X}_i\boldsymbol{\beta})\right] - y_i\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] + \ln\left[1\right] - \ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] - (y_i\ln\left[1\right] - y_i\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right])\\
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = 
+\sum_{i=1}^ny_i\mathbf{X}_i\boldsymbol{\beta} - y_i\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] + 0 - \ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] - (0 - y_i\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right])) \\
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = 
+\sum_{i=1}^ny_i\mathbf{X}_i\boldsymbol{\beta} - y_i\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] - \ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] + y_i\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right]\\
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = 
+\sum_{i=1}^ny_i\mathbf{X}_i\boldsymbol{\beta} - \ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] 
+$$
+
+$$
+\ell(\boldsymbol{\beta}|\mathbf{X},\boldsymbol{y}) = 
+\sum_{i=1}^ny_i\mathbf{X}_i\boldsymbol{\beta} - \sum_{i=1}^n\ln\left[1+\exp(\mathbf{X}_i\boldsymbol{\beta})\right] \\
+$$
+
+### Part b (6 points)
+
+Find the gradient of the log likelihood if we have three $\beta$'s. That
+is, if
+$\mathbf{X}_i\boldsymbol{\beta}=\beta_0+\beta_1x_{i1}+\beta_2x_{i2}$.
+
+$$
+\frac{d\ell}{d\boldsymbol{\beta}_0} = 
+\sum_{i=1}^n\left[y_i - \frac{\exp(\boldsymbol{\beta}_0 + \boldsymbol{\beta}_1\mathbf{X}_{i1} + \boldsymbol{\beta}_2\mathbf{X}_{i2})}{1+\exp(\boldsymbol{\beta}_0 + \boldsymbol{\beta}_1\mathbf{X}_{i1} + \boldsymbol{\beta}_2\mathbf{X}_{i2})}\right] = 
+\sum_{i=1}^n\left[y_i-p_i\right] \\
+$$
+
+$$
+\frac{d\ell}{d\boldsymbol{\beta}_1} = 
+\sum_{i=1}^n\left[y_i\mathbf{X}_{i1} -\frac{\exp(\boldsymbol{\beta}_0 + \boldsymbol{\beta}_1\mathbf{X}_{i1} + \boldsymbol{\beta}_2\mathbf{X}_{i2})}{1+\exp(\boldsymbol{\beta}_0 + \boldsymbol{\beta}_1\mathbf{X}_{i1} + \boldsymbol{\beta}_2\mathbf{X}_{i2})}\right] = \sum_{i=1`}^n\left[y_i\mathbf{X}_{i1} - p_i\mathbf{X}_{i1}\right] = \sum_{i=1}^n\left[\mathbf{X}_{i1}(y_i-p_i)\right] \\
+$$
+
+$$
+\frac{d\ell}{d\boldsymbol{\beta}_2} = 
+\sum_{i=1}^n\left[y_i\mathbf{X}_{i2} -\frac{\exp(\boldsymbol{\beta}_0 + \boldsymbol{\beta}_1\mathbf{X}_{i1} + \boldsymbol{\beta}_2\mathbf{X}_{i2})}{1+\exp(\boldsymbol{\beta}_0 + \boldsymbol{\beta}_1\mathbf{X}_{i1} + \boldsymbol{\beta}_2\mathbf{X}_{i2})}\right] = \sum_{i=1`}^n\left[y_i\mathbf{X}_{i2} - p_i\mathbf{X}_{i2}\right] = \sum_{i=1}^n\left[\mathbf{X}_{i2}(y_i-p_i)\right]
+$$
+
+### Part c (4 points)
+
+In Homework 3, Problem 2, part a, you read in the `adult` dataset (from
+the UC Irvine [database](https://archive.ics.uci.edu/dataset/2/adult)).
+This is the one that we used to predict whether a person makes over
+\$50K a year based on some other variables. The data came from the
+Census Bureau in 1994 and can be found in the Data folder in my
+Math3190_S26 GitHub repo. More info on the dataset can be found in the
+"adult.names" file.
+
+Read in the dataset and put column names like you did in HW 3. Then fit
+a logistic regression model using the `glm()` function that predicts
+salary from age/10 and sex. Note, we should divide the age by 10 in our
+model because this makes the gradient descent more stable (for whatever
+reason). We can divide by 10 in the `glm()` function by wrapping it in
+the `I()` function. Like this:
+`glm(salary ~ I(age/10) + sex, data = adult, family = binomial)`.
+
+```{r}
+#| label: read in data
+
+adult_names <- read_csv("/Users/melaniejensen/Library/CloudStorage/OneDrive-SouthernUtahUniversity/Math_3190/Math_3190_Assignments/Homework/Homework 3/adult.names") |> 
+  tail(15)
+
+adults <- read_csv("/Users/melaniejensen/Library/CloudStorage/OneDrive-SouthernUtahUniversity/Math_3190/Math_3190_Assignments/Homework/Homework 3/adult.data") |> 
+  rename(age = '39', work_class = 'State-gov', fnlwgt = '77516', education = 'Bachelors', education_num = '13', marital_status = 'Never-married', occupation = 'Adm-clerical', relationship = 'Not-in-family', race = 'White', sex = 'Male', capital_gain = '2174', capital_loss = '0', hours_per_week = '40', native_country = 'United-States', salary = '<=50K') |> 
+  mutate(salary = factor(salary, levels = c('<=50K', '>50K')))
+
+```
+
+```{r}
+#| label: logistic regression
+
+mod1 <- glm(salary ~ I(age/10) + sex, data = adults, family = binomial)
+summary(mod1)
+
+```
+
+### Part d (4 points)
+
+Define `y`, `x1`, and `x2`. `y` should be a vector of 0's and 1's with a
+1 indicating that the person had a salary above \$50,000. `x1` should be
+a vector that contains all of the age values (divided by 10) and then
+`x2` should be an indicator variable that indicates if the person is
+male or not. Taking columns from the matrix obtained using the
+`model.matrix()` function applied to your logistic regression model you
+fit in part c may be useful here.
+
+```{r}
+#| label: Definitions
+
+X_matrix <- model.matrix(mod1)
+x1 <- X_matrix[, "I(age/10)"]
+x2 <- X_matrix[, "sexMale"]
+y <- as.numeric(adults$salary) - 1
+
+```
+
+### Part e (7 points)
+
+Use the gradient descent function from problem 1 to find estimates for
+$\beta_0$, $\beta_1$, and $\beta_2$ for predicting salary from age and
+sex. Enter the following in your function:
+
+-   Use the vector `c(0, 0, 0)` as your starting point.
+-   Instead of starting the step size, $\gamma_k$, at 1, start it at 0.1
+    to save some time with the line search.
+-   Make sure the maximum number of iterations is at least 200.
+
+You'll know you did this right if the optimized values you end up with
+match (or are very close to) the estimates from your logistic regression
+model you fit in part c. This may take a minute or two to run, so you
+may want to cache this code chunk.
+
+```{r}
+#| label: logistic gradient descent
+
+f <- function(beta, y, x_long) {
+  n <- length(y)
+  X <- cbind(1, x_long[1:n], x_long[(n+1):(2*n)])
+  z <- X %*% beta
+  val <- sum(y * z - log(1 + exp(z)))
+  
+  return(as.vector(val))
+}
+
+f_prime <- function(beta, y, x_long) {
+  n <- length(y)
+  X <- cbind(1, x_long[1:n], x_long[(n+1):(2*n)])
+  z <- X %*% beta
+  p <- exp(z) / (1 + exp(z))
+  grad <- t(X) %*% (y - p)
+  return(as.vector(grad))
+}
+
+gradient_desc(starting = c(0, 0, 0), f = function(b) f(b, y, c(x1,x2)), 
+  gradient = function(b) f_prime(b, y, c(x1,x2)), max = TRUE, maxit = 500, 
+  step_size = 0.1)
+
+```
+
+### Part f (3 points)
+
+Use the `optim()` function in **R** to find the estimate for the
+$\beta$'s here. This should be much faster since this function is much
+better optimized (no pun intended). The results here should also be very
+close to the numbers we obtained for the slopes in the model we fit in
+part c, but may not match exactly due to different stopping criteria.
+
+```{r}
+#| label: built in optim()
+
+optim(par = c(0, 0, 0),fn = function(b) -f(b, y, c(x1,x2)),
+  gr = function(b) -f_prime(b, y, c(x1,x2)))
+
+```
+
+
+$\[\begin{align*} f'(x) &= \frac{d}{dx}\left[\ln(1+x^2)\right](1+x)e^{-x^2} + \ln(1+x^2)\frac{d}{dx}\left[(1+x)e^{-x^2}\right]\\ &= \frac{d}{dx}\left[\ln(1+x^2)\right](1+x)e^{-x^2} + \ln(1+x^2)\left(\frac{d}{dx}\left[(1+x)\right]e^{-x^2} + (1+x)\frac{d}{dx}\left[e^{-x^2}\right]\right)\\ &= \dfrac{2x}{1+x^2}(1+x)e^{-x^2} + \ln(1+x^2)\left(1\cdot e^{-x^2} + (1+x)(-2x)e^{-x^2}\right)\\ &= e^{-x^2}\left(\dfrac{2x(1+x)}{1+x^2} + \ln(1+x^2) - 2x(1+x)\ln(1+x^2)\right)\\ &=e^{-x^2}\left(\dfrac{2x(1+x)}{1+x^2} + \ln(1+x^2)\big(1 - 2x-2x^2\big)\right) \end{align*}\]$

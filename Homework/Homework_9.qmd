@@ -1,0 +1,329 @@
+---
+title: "**MATH 3190 Homework 9**"
+subtitle: |
+  Due April 9, 2026\
+  Focus: Notes 10\
+  Total Points: 70 + 10 (Self-Critique Comment and Uploading to GitHub) = 80
+format: 
+  html:
+    embed-resources: true # Keep this so the html file is easily shareable.
+urlcolor: blue
+execute: # Will set these as the default for all code chunks
+  eval: true
+  echo: true
+  cache: true
+  message: false
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+Note that your homework should be completed in Quarto. You can just add your answers and code to this document in the appropriate part. The file should be rendered as an html document or pdf document (html is quicker to render and you will need an installation of LaTeX to render as a pdf). You will "turn in" this homework by uploading the files, the .qmd and output file, to your GitHub `Math_3190_Assignment` repository in the `Homework/Homework_9` directory. Make sure all supporting files (if there are any) are in this directory as well. You should use `git` and `Unix` commands in a terminal for this (i.e. don't manually upload files to GitHub). In addition, you will submit just your html or pdf file on Canvas to unlock the solutions.
+
+Don't forget to also put a [self-critique comment]{.underline} on Canvas indicating what you did correctly and incorrectly and include any questions you may have about the assignment after submitting the assignment and thoroughly looking through the solutions.
+
+# Problem 1 (70 points)
+
+Before we begin, please re-install the `math3190package` since there was an update to the `classifier_plot()` function that is needed on this assignment. Use either `devtools::install_github("rbrown53/math3190package")` or\
+`remotes::install_github("rbrown53/math3190package")`.
+
+```{r}
+#| label: setup
+
+remotes::install_github("rbrown53/math3190package")
+library(math3190package)
+library(faraway)
+library(rsample)
+library(caret)
+library(tidyverse)
+library(naivebayes)
+
+```
+
+The National Institute of Diabetes and Digestive and Kidney Diseases conducted a study on 768 adult female Pima Native Americans living near Phoenix. The purpose of the study was to investigate factors related to diabetes. The response variable in this study (test) was whether or not the patient showed signs of diabetes (1 = yes, 0 = no). One explanatory variable considered was the plasma glucose concentration (in mg/dL) at 2 hours in an oral glucose tolerance test (glucose). Many other potential explanatory variables were considered as well including body mass index (BMI). The goal here is to predict the diabetes status of the subject, which is in the `results` variable.
+
+### Part a (5 points)
+Install and/or load the `faraway` package with the `pima` dataset. Set a seed and then split the data into a testing and a training set with the testing set containing 20% of the data values. When you do this, change the name of the variable "test" to "result" since it will be a bit confusing to call that test when we have a test dataset. Then make the `result` variable a factor so **R** treats it as categorical rather than numeric.
+
+```{r}
+#| label: p1a
+
+pima_data <- faraway::pima
+
+pima_data <- pima_data |> 
+  rename(result = test) |> 
+  mutate(result = as.factor(result))
+
+set.seed(2026)
+
+data_split <- initial_split(pima_data, prop = 0.80)
+pima_train <- training(data_split)
+pima_test  <- testing(data_split)
+
+```
+
+### Part b (6 points)
+* Fit a logistic regression model to the training set for predicting `result` from the `glucose` and `bmi` variables.
+* Then use the `classifier_plot()` function in the `math3190package` (make sure you re-installed it!) to make a plot that shows the regions on the `glucose`-`bmi`-plane that are predicted to be 0 and 1. This shows how logistic regression divides the classes. Use the **training set** as the `data` input in this function.
+* Next, obtain the predictions for the **test set** with a probability cutoff of 0.5 to predict if the person has diabetes. Create a confusion matrix using the `confusionMatrix()` function in the `caret` library. Make sure to put `positive = "1"` for this and all other confusion matrices on this assignment. Print all of the output from that function that shows the confusion matrix and many associated statistics.
+* Write a sentence or two discussing how well this model performs in predicting on the test set.
+
+```{r}
+#| label: p1b
+
+logistic_model <- glm(result ~ glucose + bmi, data = pima_train, family = binomial)
+
+classifier_plot(logistic_model, data = pima_train)
+
+logistic_predictions <- predict(logistic_model, newdata = pima_test, type = "response")
+
+confusionMatrix(
+  data = factor(ifelse(logistic_predictions > 0.5, "1", "0"), levels = c("0", "1")), 
+  reference = factor(pima_test$result, levels = c("0", "1")), 
+  positive = "1"
+)
+
+```
+
+This model does pretty well at predicting 0's, but does not do as well with predicting 1's as the model is predicting correctly about half the time for a result of 1.
+
+### Part c (3 points)
+Now let's use naïve Bayes to get predictions. Use the `naive_bayes()` function in the `naivebayes` library to fit a model predicting result using `glucose` and `bmi`. Find the predicted probabilities of being a 0 and a 1 for the first observation in the training set.
+
+```{r}
+#| label: p1c
+
+naivebayes_model <- naive_bayes(result ~ glucose + bmi, data = pima_train)
+predict(naivebayes_model, newdata = pima_train[1, ], type = "prob")
+
+```
+
+### Part d (9 points)
+Now find the predicted probability of being a 0 and a 1 for the first observation in the training set "by hand" like we did in the notes on pages 187 and 188. To simplify this a bit, let's again only use the variables `glucose` and `bmi` here. Of course, use **R** to help you (the `dnorm()` function and some tidyverse functions will be especially nice), but don't use the `naive_bayes()` function here. Note: these variables we are using to predict are numeric, so we will assume a normal distribution for both of them (maybe not a good assumption, but let's go with it). After you get the probabilities, compare them to the ones you got in part (c). They should match
+
+```{r}
+#| label: p1d1
+
+library(tidyverse)
+
+pima_train[1,]
+
+pima_summary <- pima_train |> 
+  group_by(result) |> 
+  summarise(
+    n             = n(),
+    mean_glucose  = mean(glucose),
+    stdev_glucose = sd(glucose),
+    mean_bmi      = mean(bmi),
+    stdev_bmi     = sd(bmi)
+  ) |>
+  bind_rows(
+    tibble(result = "Total", n = nrow(pima_train))
+  )
+
+pima_summary  
+
+```
+
+::: {style="font-size: 0.75em"}
+$$P(result = 0 | glucose = 174, bmi = 44.5) \propto P(result = 0) \cdot P(glucose = 174 | result = 0) \cdot P(bmi = 44.5 | result = 0)$$
+:::
+
+```{r}
+#| label: p1d2
+
+p_result_0 <- pima_summary$n[pima_summary$result == "0"] / pima_summary$n[pima_summary$result == "Total"]
+
+p_glucose_result_0 <- dnorm(174, pima_summary$mean_glucose[pima_summary$result == "0"], pima_summary$stdev_glucose[pima_summary$result == "0"])
+
+p_bmi_result_0 <- dnorm(44.5, pima_summary$mean_bmi[pima_summary$result == "0"], pima_summary$stdev_bmi[pima_summary$result == "0"])
+
+p_result_0 * p_glucose_result_0 * p_bmi_result_0
+
+```
+
+::: {style="font-size: 0.75em"}
+$$P(result = 1 | glucose = 174, bmi = 44.5) \propto P(result = 1) \cdot P(glucose = 174 | result = 1) \cdot P(bmi = 44.5 | result = 1)$$
+:::
+
+```{r}
+#| label: p1d3
+
+p_result_1 <- pima_summary$n[pima_summary$result == "1"] / pima_summary$n[pima_summary$result == "Total"]
+
+p_glucose_result_1 <- dnorm(174, pima_summary$mean_glucose[pima_summary$result == "1"], pima_summary$stdev_glucose[pima_summary$result == "1"])
+
+p_bmi_result_1 <- dnorm(44.5, pima_summary$mean_bmi[pima_summary$result == "1"], pima_summary$stdev_bmi[pima_summary$result == "1"])
+
+p_result_1 * p_glucose_result_1 * p_bmi_result_1
+
+```
+
+```{r}
+#| label: p1d4
+
+p_result_0_prob <- p_result_0 * p_glucose_result_0 * p_bmi_result_0 / (p_result_0 * p_glucose_result_0 * p_bmi_result_0 + p_result_1 * p_glucose_result_1 * p_bmi_result_1)
+
+p_result_1_prob <- p_result_1 * p_glucose_result_1 * p_bmi_result_1 / (p_result_0 * p_glucose_result_0 * p_bmi_result_0 + p_result_1 * p_glucose_result_1 * p_bmi_result_1)
+
+tibble(
+  result    = c("0", "1"),
+  prob = c(p_result_0_prob, p_result_1_prob)
+)
+
+```
+
+The probabilities came out the same as the ones found using the predict() function, as expected. 
+
+### Part e (3 points)
+Now fit a naïve Bayes model predicting `result` from `glucose` and `bmi` using a kernel instead of assuming a normal distribution. You can do this by setting `usekernel = TRUE` in the `naive_bayes()` function.
+
+```{r}
+#| label: p1e
+
+naivebayes_kernel_model <- naive_bayes(result ~ glucose + bmi, data = pima_train, usekernel = TRUE)
+
+```
+
+### Part f (5 points)
+Now use the `classifier_plot()` function to make two plots: one using the first naïve Bayes from part (c) and one using the naïve Bayes with the kernel from part (e). Both should show the separation on the **training set**. Comment on how these models seems to perform in separating the results classes and if there seems like there may be any over-fitting here.
+
+```{r}
+#| label: p1f
+
+classifier_plot(naivebayes_model, data = pima_train) + ggtitle("Base Naive Bayes")
+classifier_plot(naivebayes_kernel_model, data = pima_train) + ggtitle("Naive Bayes with Kernel")
+
+```
+
+With how chaotic the boundary lines appear when using the model with the kernal, it seems like there may be some overfitting in that model. The base model has a much smoother boundary line, which indicates signs of better generalization.
+
+### Part g (5 points)
+Report the output of the `confusionMatrix()` function for both naïve Bayes models when predicting on the **test** set. Write a couple sentences comparing the confusion matrix statistics.
+
+```{r}
+#| label: p1g
+
+naivebayes_model_predict <- predict(naivebayes_model, newdata = pima_test, type = "class")
+
+confusionMatrix(naivebayes_model_predict, factor(pima_test$result, levels = c("0", "1")), positive = "1")
+
+naivebayes_kernal_model_predict <- predict(naivebayes_kernel_model, newdata = pima_test, type = "class")
+
+confusionMatrix(naivebayes_kernal_model_predict, factor(pima_test$result, levels = c("0", "1")), positive = "1")
+
+```
+
+The model that uses a kernal seems to be performing worse than the base model, as two instances that had previously been correctly classified as a 0 are being incorrectly classified as a 1. This is likely due to the overfitting that was observed in part (f). 
+
+### Part h (3 points)
+Now let's use a support vector machine (SVM) for classifying diabetes using all other variables. We'll use the `svm()` function in the `e1071` library. Fit a model with a **polynomial** kernel here with degree 3 (the default), a cost of 1 (also the default), and keep `scale = TRUE` (which is the default as well). Ideally, we would do a cross validation to select the cost, but we'll do that for the next kernel.
+
+```{r}
+#| label: p1h
+
+library(e1071)
+
+svm_poly_3_model <- svm(result ~ glucose + bmi, data = pima_train, kernel = "polynomial", degree = 3, cost = 1, scale = TRUE)
+
+```
+
+### Part i (10 points)
+Now let's use a different kernel. Let's use the radial kernel for the SVM. This has two tuning parameters: the cost and $\gamma$. Let's use the `train()` function in the `caret` package to do 5-fold cross validation (set a seed, please) to select both of those parameters. However, the `train()` function uses $\sigma$ instead of $\gamma$ and $C$ instead of cost.
+
+Use the `trainControl()` function with the `trControl` option and the `tuneGrid` option in the `train()` function to perform this cross-validation. For `sigma`, use `seq(0.1, 2, by = 0.1)` and for `C` also use `seq(0.1, 2, by = 0.1)`. Put `method = "svmRadial"` in the `train()` function as well so it knows to use a SVM with the radial kernel. You will need to install the `kernlab` package for this to work. Set a seed here as well.
+
+By default, the "best" sigma and C values will be chosen with accuracy instead of Cohen's kappa. Make sure to choose the best values using kappa (although both metrics may choose the same "best" values).
+
+```{r}
+#| label: p1i
+
+library(kernlab)
+
+set.seed(2026)
+
+cv_control <- trainControl(
+  method = "cv",
+  number = 5,
+  selectionFunction = "best"
+)
+
+tune_grid <- expand.grid(
+  sigma = seq(0.1, 2, by = 0.1),
+  C     = seq(0.1, 2, by = 0.1)
+)
+
+svm_radial_cv <- train(
+  result ~ .,
+  data      = pima_train,
+  method    = "svmRadial",
+  trControl = cv_control,
+  tuneGrid  = tune_grid,
+  metric    = "Kappa"
+)
+
+svm_radial_cv$bestTune
+
+```
+
+### Part j (3 points)
+Fit the SVM with the **radial** kernel using the `svm()` function and the cross-validated cost and $\gamma$ found in part (i).
+
+```{r}
+#| label: p1j
+
+svm_radial_model <- svm(result ~ glucose + bmi, data = pima_train, kernel = "radial", cost = svm_radial_cv$bestTune$C, gamma = svm_radial_cv$bestTune$sigma, scale = TRUE)
+
+```
+
+### Part k (5 points)
+Create the classifier plots for both SVM models and plot the training set and comment on how well these seem to separate the classes.
+
+```{r}
+#| label: p1k
+
+
+classifier_plot(svm_poly_3_model, pima_train) + ggtitle("SVM with Polynomial Kernel")
+
+classifier_plot(svm_radial_model, pima_train) + ggtitle("SVM with Radial Kernel")
+
+```
+
+It apears that the radial kernal svm is doing a better job at seperating the classes when compared to the polynomial kernal svm. The polynomial kernal svm is taking out area chunks in which there are no data points, which when combined with the new boundary trajectory makes it appear to be fitting the data worse. 
+
+### Part l (3 points)
+Report the confusion matrix statistics for both SVM models when predicting the **test** set.
+
+```{r}
+#| label: p1l
+
+poly_svm_predict <- predict(svm_poly_3_model, newdata = pima_test, type = "class")
+
+confusionMatrix(poly_svm_predict, factor(pima_test$result, levels = c("0", "1")), positive = "1")
+
+radial_svm_predict <- predict(svm_radial_model, newdata = pima_test, type = "class")
+
+confusionMatrix(radial_svm_predict, factor(pima_test$result, levels = c("0", "1")), positive = "1")
+
+```
+
+While the polynomial svm does slightly better at predicting 0's, radial still does a descent job at predicting 0's while being much better at predicting 1's.
+
+
+### Part m (10 points)
+Compare the output of the `confusionMarix()` function for all of our classifiers: the logistic regression model, the naïve Bayes with a normal assumption, the naïve Bayes using kernel density estimation, the SVM with a polynomial kernel, and the SVM using a radial kernel. Which was best? Which was worst? How different were the results? You can focus on the Cohen's $\kappa$ and balanced accuracy for each one.
+
+```{r}
+#| label: p1m
+
+model_comparison <- tibble(
+  Model = c("Logistic", "Naive Bayes", "Naive Bayes with Kernal", "Polynomial SVM", "Radial SVM"),
+  Kappa = c(0.4754, 0.5054, 0.4802, 0.3484, 0.5089),
+  Balanced_Accuracy = c(0.7281, 0.7425, 0.7326, 0.6500, 0.7385)
+)
+
+model_comparison
+
+```
+
+We can see that out of the 5 models we used, the polynomial svm performed the worst with 0.3484 and 0.6500 respectively for the kappa and balanced accuracy. The models that performed the classification the best were the base naive bayes with 0.5054 and 0.7425 respectively, and the radial svm with 0.5089 and 0.7385 respectively. For the most part, all of the models had Kappa values between 0.45 and 0.50 and balanced accuracy values between 0.72 and 0.74, which are not big differences. The polynomial svm was the only model that had performance values outside of those ranges, and that difference was quite a bit more than within those ranges.
