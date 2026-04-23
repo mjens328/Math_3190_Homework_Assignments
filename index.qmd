@@ -1,7 +1,21 @@
 ---
-title: "Math_3190_Homework_Assignments"
+title: "Math 3190 Homework"
+subtitle: "Fundamentals of Data Science &middot; Southern Utah University"
+author: "Melanie Jensen"
 ---
 
-This is a Quarto website.
+Welcome! This website is where I share the coursework I've completed for **Math 3190: Fundamentals of Data Science** at Southern Utah University, taught by Professor Rick Brown. Each homework assignment is rendered from a Quarto (`.qmd`) document, with code, output, and written answers all in one place.
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+## About the course
+
+Math 3190 is a hands-on introduction to the tools and methods of data science. Across ten assignments, the course moves through data wrangling with the `tidyverse`, querying databases with SQL, resampling methods like bootstrapping, regression and regularization, dimension reduction, classification, and time series analysis.
+
+All of the work on this site is done in **R** with **Quarto**, and version-controlled in **Git** &mdash; which means every assignment here reflects not just the statistics, but also the workflow of reproducible, collaborative data science.
+
+## What you'll find here
+
+- **[Homework](Homework/index.qmd)** &mdash; all ten assignments, each with the full write-up, code, and output.
+- **[About](about.qmd)** &mdash; a bit more about me, the course, and the tools I've been learning.
+- **[GitHub repo](https://github.com/mjens328/Math_3190_Homework_Assignments)** &mdash; the source `.qmd` files and everything that builds this site.
+
+Thanks for stopping by!

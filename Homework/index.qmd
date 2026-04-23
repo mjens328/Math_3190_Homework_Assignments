@@ -1,0 +1,80 @@
+---
+title: "Homework Assignments"
+subtitle: "All ten assignments from Math 3190: Fundamentals of Data Science"
+---
+
+This page collects every homework assignment from the course. Click any card below to open the full write-up with code, output, and answers. You can also use the sidebar on the left to jump between assignments.
+
+::: {.grid}
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 1](Homework_1.qmd)
+*Due Jan 29, 2026* &middot; Notes 1&ndash;3
+
+Getting started with Quarto, the `tidyverse`, `lubridate`, and a first look at Python via `reticulate`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 2](Homework_2.qmd)
+*Due Feb 5, 2026* &middot; Notes 4
+
+Working with relational databases in R using `DBI`, `RSQLite`, and `dbplyr`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 3](Homework_3.qmd)
+*Due Feb 12, 2026* &middot; Notes 5
+
+Exploratory analysis and an introduction to the modeling workflow with `caret`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 4](Homework_4.qmd)
+*Due Feb 19, 2026* &middot; Notes 6
+
+Mathematical foundations &mdash; derivatives with `Deriv` and visualization with `ggplot2`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 5](Homework_5.qmd)
+*Due Feb 26, 2026* &middot; Notes 5 & 7 (Part 1)
+
+Bootstrapping and resampling-based inference.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 6](Homework_6.qmd)
+*Due Mar 5, 2026* &middot; Notes 7 (Part 2)
+
+Linear regression and regularization using `glmnet`, `faraway`, and `AER`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 7](Homework_7.qmd)
+*Due Mar 26, 2026* &middot; Notes 8
+
+Dimension reduction with `pls`, `umap`, and multi-variable exploration via `GGally`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 8](Homework_8.qmd)
+*Due Apr 2, 2026* &middot; Notes 9
+
+Advanced visualization and model output using `patchwork` and `knitr`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 9](Homework_9.qmd)
+*Due Apr 9, 2026* &middot; Notes 10
+
+Classification methods &mdash; Naive Bayes and Support Vector Machines with `e1071` and `kernlab`.
+:::
+
+::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
+### [Homework 10](Homework_10.qmd)
+*Due Apr 16, 2026* &middot; Notes 11
+
+Time series analysis and forecasting with `forecast`, `tsibble`, and `tseries`.
+:::
+
+:::

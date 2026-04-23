@@ -1,1 +1,61 @@
-/* css styles */
+/* ===========================================================
+   Math 3190 Homework — small polish on top of the Flatly theme
+   =========================================================== */
+
+/* A little more breathing room in the main content area */
+main.content {
+  padding-top: 1rem;
+  padding-bottom: 2rem;
+}
+
+/* Slightly tighter, classier headings */
+h1, h2, h3, h4 {
+  letter-spacing: -0.01em;
+}
+
+h1.title {
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: #6c757d;
+  font-size: 1.05rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Homework landing-page cards */
+.grid .g-col-12 h3 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
+}
+
+.grid .g-col-12 {
+  border: 1px solid #e9ecef;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  background-color: #ffffff;
+  transition: box-shadow 0.15s ease-in-out, transform 0.15s ease-in-out;
+}
+
+.grid .g-col-12:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.grid .g-col-12 em {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Footer: a touch more elegant */
+.page-footer, .nav-footer {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+/* Keep code blocks readable */
+pre.sourceCode {
+  border-radius: 0.4rem;
+}

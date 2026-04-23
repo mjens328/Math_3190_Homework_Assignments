@@ -3,40 +3,62 @@ project:
   output-dir: docs
 
 website:
-  title: "Math_3190_Homework_Assignments"
+  title: "Math 3190 Homework"
+  description: "Homework assignments for Math 3190: Fundamentals of Data Science at Southern Utah University."
+
   navbar:
+    background: primary
+    search: true
     left:
       - href: index.qmd
         text: Home
-      - about.qmd
-      - href: Homework/Homework_1.qmd
-        text: Homework 1
-      - href: Homework/Homework_2.qmd
-        text: Homework 2
-      - href: Homework/Homework_3.qmd
-        text: Homework 3
-      - href: Homework/Homework_4.qmd
-        text: Homework 4
-      - href: Homework/Homework_5.qmd
-        text: Homework 5
-      - href: Homework/Homework_6.qmd
-        text: Homework 6
-      - href: Homework/Homework_7.qmd
-        text: Homework 7
-      - href: Homework/Homework_8.qmd
-        text: Homework 8
-      - href: Homework/Homework_9.qmd
-        text: Homework 9
-      - href: Homework/Homework_10.qmd
-        text: Homework 10
+      - href: about.qmd
+        text: About
+      - href: Homework/index.qmd
+        text: Homework
+    right:
+      - icon: github
+        href: https://github.com/mjens328/Math_3190_Homework_Assignments
+        aria-label: GitHub
+      - icon: envelope
+        href: "mailto:meljensen328@gmail.com"
+        aria-label: Email
+
+  sidebar:
+    - id: homework
+      title: "Assignments"
+      style: "docked"
+      collapse-level: 2
+      contents:
+        - Homework/index.qmd
+        - section: "Assignments"
+          contents:
+            - Homework/Homework_1.qmd
+            - Homework/Homework_2.qmd
+            - Homework/Homework_3.qmd
+            - Homework/Homework_4.qmd
+            - Homework/Homework_5.qmd
+            - Homework/Homework_6.qmd
+            - Homework/Homework_7.qmd
+            - Homework/Homework_8.qmd
+            - Homework/Homework_9.qmd
+            - Homework/Homework_10.qmd
+
+  page-footer:
+    background: light
+    left: |
+      &copy; 2026 Melanie Jensen &middot; Math 3190 at Southern Utah University
+    center: |
+      Built with [Quarto](https://quarto.org/)
+    right: |
+      More at [GitHub](https://github.com/mjens328/Math_3190_Homework_Assignments)
 
 format:
   html:
-    theme:
-      - cosmo
-      - brand
+    theme: flatly
     css: styles.css
     toc: true
-
-
-
+    toc-location: right
+    code-copy: true
+    code-overflow: wrap
+    link-external-newwindow: true
