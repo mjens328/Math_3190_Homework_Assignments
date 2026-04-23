@@ -4,7 +4,7 @@ title: "About"
 
 ## About me
 
-Hi, I'm **Melanie Jensen**, a student at Southern Utah University. I'm studying <!-- TODO: update with your major and year, e.g. "statistics, currently in my junior year" --> _[add your major and year here]_. This site started as a place to collect my Math 3190 assignments &mdash; it's also turning into a little portfolio of the data science tools I've been learning along the way.
+Hi, I'm **Melanie Jensen**, a student at Southern Utah University. I just recently graduated with a double major in Economics and Data Science, with minors in Actuarial Mathematics, Computer Science and Finance. This site started as a place to collect my Math 3190 assignments &mdash; it's also turning into a little portfolio of the data science tools I've been learning along the way.
 
 ## About the course
 
@@ -35,4 +35,4 @@ Through the coursework collected on this site, I've gained hands-on experience w
 
 ## Get in touch
 
-The best way to see the code behind everything here is on [GitHub](https://github.com/mjens328/Math_3190_Homework_Assignments). You can also reach me at [meljensen328@gmail.com](mailto:meljensen328@gmail.com).
+The best way to see the code behind everything here is on [GitHub](https://github.com/mjens328/Math_3190_Homework_Assignments). If you have any questions about the course, the assignments, or just want to chat about data science, feel free to reach out to me on [LinkedIn](https://www.linkedin.com/in/melanie-jensen/)

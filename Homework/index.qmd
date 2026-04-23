@@ -11,70 +11,70 @@ This page collects every homework assignment from the course. Click any card bel
 ### [Homework 1](Homework_1.qmd)
 *Due Jan 29, 2026* &middot; Notes 1&ndash;3
 
-Getting started with Quarto, the `tidyverse`, `lubridate`, and a first look at Python via `reticulate`.
+Setting up the data science toolkit: navigating the Unix command line, version-controlling a project with Git and GitHub, wrangling data with the `tidyverse` and pipes, and writing a first reproducible Quarto document with R, LaTeX, and Python code chunks.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 2](Homework_2.qmd)
 *Due Feb 5, 2026* &middot; Notes 4
 
-Working with relational databases in R using `DBI`, `RSQLite`, and `dbplyr`.
+Querying relational databases from R. Writing SQL (`SELECT`, `WHERE`, `GROUP BY`, joins) against a local SQLite database using `DBI` and `RSQLite`, and translating `dplyr` pipelines into SQL with `dbplyr`.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 3](Homework_3.qmd)
 *Due Feb 12, 2026* &middot; Notes 5
 
-Exploratory analysis and an introduction to the modeling workflow with `caret`.
+Verification methods for classifiers and regressors &mdash; training/test splits, confusion matrices, sensitivity and specificity, $k$-nearest neighbors, picking $k$, and $k$-fold cross-validation tuned through `caret`.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 4](Homework_4.qmd)
 *Due Feb 19, 2026* &middot; Notes 6
 
-Mathematical foundations &mdash; derivatives with `Deriv` and visualization with `ggplot2`.
+Optimization for statistics. Implementing Newton's method and gradient descent by hand, then using R's `optimize()` and `optim()` to fit models via Maximum Likelihood Estimation.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 5](Homework_5.qmd)
 *Due Feb 26, 2026* &middot; Notes 5 & 7 (Part 1)
 
-Bootstrapping and resampling-based inference.
+Bootstrap resampling for inference paired with a linear-regression refresher: checking model diagnostics and using remedial measures like transformations, bootstrapped confidence intervals, and weighted least squares.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 6](Homework_6.qmd)
 *Due Mar 5, 2026* &middot; Notes 7 (Part 2)
 
-Linear regression and regularization using `glmnet`, `faraway`, and `AER`.
+Advanced regression: ridge, LASSO, and elastic-net regularization via `glmnet`, the bias&ndash;variance trade-off, logistic-regression elastic nets, and Poisson / quasi-Poisson models for count data.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 7](Homework_7.qmd)
 *Due Mar 26, 2026* &middot; Notes 8
 
-Dimension reduction with `pls`, `umap`, and multi-variable exploration via `GGally`.
+Dimension reduction for modeling and visualization &mdash; principal component analysis (PCA), partial least squares regression with interpretable PLS surrogates, and the non-linear UMAP projection.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 8](Homework_8.qmd)
 *Due Apr 2, 2026* &middot; Notes 9
 
-Advanced visualization and model output using `patchwork` and `knitr`.
+Bayesian methods: conditional probability and Bayes' theorem, deriving priors, likelihoods, and posteriors, and drawing from posteriors via Gibbs and Metropolis MCMC samplers (with diagnostics).
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 9](Homework_9.qmd)
 *Due Apr 9, 2026* &middot; Notes 10
 
-Classification methods &mdash; Naive Bayes and Support Vector Machines with `e1071` and `kernlab`.
+More classification techniques &mdash; the Naïve Bayes classifier, Linear Discriminant Analysis (LDA), and hard- and soft-margin Support Vector Machines for both linear and non-linear decision boundaries.
 :::
 
 ::: {.g-col-12 .g-col-md-6 .g-col-lg-4}
 ### [Homework 10](Homework_10.qmd)
 *Due Apr 16, 2026* &middot; Notes 11
 
-Time series analysis and forecasting with `forecast`, `tsibble`, and `tseries`.
+Time series analysis. Exploring autocorrelation (ACF/PACF), decomposing a series into trend, seasonality, and error, fitting MA, AR, ARMA, and ARIMA models, and producing forecasts with `auto.arima()`.
 :::
 
 :::
